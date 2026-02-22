@@ -19,9 +19,11 @@ export function createServer() {
   });
 
   app.get("/api/demo", handleDemo);
-
-  // PDF proxy route
   app.get("/api/pdf-proxy", handlePdfProxy);
 
   return app;
 }
+
+// --- ADD THIS FOR VERCEL ---
+const app = createServer();
+export default app;
