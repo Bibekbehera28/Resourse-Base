@@ -1,0 +1,255 @@
+/** @import must precede all other statements */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Animation keyframes */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(99, 102, 241, 0.5);
+  }
+}
+
+@keyframes logoRotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(180deg);
+  }
+}
+
+@layer base {
+  /**
+   * Tailwind CSS theme - Dark mode by default
+   * tailwind.config.ts expects the following color variables to be expressed as HSL values.
+  */
+  :root {
+    --background: 0 0% 8%;
+    --foreground: 0 0% 98%;
+
+    --card: 0 0% 12%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 0 92.3% 52.5%;
+    --primary-foreground: 0 0% 8%;
+
+    --secondary: 0 85% 50%;
+    --secondary-foreground: 0 0% 8%;
+
+    --muted: 0 0% 25%;
+    --muted-foreground: 0 0% 70%;
+
+    --accent: 0 100% 55%;
+    --accent-foreground: 0 0% 8%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 20%;
+    --input: 0 0% 15%;
+    --ring: 0 92.3% 52.5%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 8%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 0 92.3% 52.5%;
+    --sidebar-primary-foreground: 0 0% 8%;
+    --sidebar-accent: 0 85% 50%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 20%;
+    --sidebar-ring: 0 92.3% 52.5%;
+  }
+
+  .light {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 15%;
+
+    --primary: 0 92.3% 52.5%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 85% 50%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 0 0% 93%;
+    --muted-foreground: 0 0% 40%;
+
+    --accent: 0 100% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 88%;
+    --input: 0 0% 93%;
+    --ring: 0 92.3% 52.5%;
+
+    --sidebar-background: 0 0% 96%;
+    --sidebar-foreground: 0 0% 20%;
+    --sidebar-primary: 0 92.3% 52.5%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 85% 50%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 90%;
+    --sidebar-ring: 0 92.3% 52.5%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    background: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(222.2, 50%, 8%) 100%);
+    min-height: 100vh;
+  }
+
+  /* Ensure custom cursor is visible */
+  #custom-cursor-effect {
+    pointer-events: none !important;
+    z-index: 99999 !important;
+  }
+
+  :where(p, span, li, h1, h2, h3, h4, h5, h6, a, button, label, td, th) {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  pre,
+  code {
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  /* Smooth animations for pages */
+  @media (prefers-reduced-motion: no-preference) {
+    * {
+      @apply transition-colors duration-300;
+    }
+  }
+}
+
+@layer components {
+  /* Fade in animation for pages */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+
+  /* Fade in up animation for cards */
+  .animate-fade-in-up {
+    animation: fadeInUp 0.6s ease-out forwards;
+    opacity: 0;
+  }
+
+  /* Stagger animation for children */
+  .animate-stagger > * {
+    animation: fadeInUp 0.6s ease-out forwards;
+  }
+
+  .animate-stagger > :nth-child(1) { animation-delay: 0.1s; opacity: 0; }
+  .animate-stagger > :nth-child(2) { animation-delay: 0.2s; opacity: 0; }
+  .animate-stagger > :nth-child(3) { animation-delay: 0.3s; opacity: 0; }
+  .animate-stagger > :nth-child(4) { animation-delay: 0.4s; opacity: 0; }
+  .animate-stagger > :nth-child(n+5) { animation-delay: 0.5s; opacity: 0; }
+
+  /* Scale in animation */
+  .animate-scale-in {
+    animation: scaleIn 0.4s ease-out forwards;
+  }
+
+  /* Smooth card transitions without color change */
+  .card-smooth {
+    transition: all 0.3s ease;
+  }
+
+  /* Smooth hover lift effect */
+  .card-hover {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .card-hover:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Rotating logo animation */
+  .logo-rotate {
+    transition: all 0.3s ease;
+  }
+
+  .group:hover .logo-rotate {
+    animation: logoRotate 0.6s ease-in-out;
+  }
+}
