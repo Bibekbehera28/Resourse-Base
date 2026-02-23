@@ -1,7 +1,6 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import serverless from "serverless-http"; // Import this
 import { handleDemo } from "./routes/demo";
 import { handlePdfProxy } from "./routes/pdf-proxy";
 
@@ -21,7 +20,6 @@ export function createServer() {
   return app;
 }
 
+// For local usage (if needed), export a default Express app instance.
 const app = createServer();
-
-// Wrap the app with serverless-http for better Vercel compatibility
-export default serverless(app);
+export default app;
