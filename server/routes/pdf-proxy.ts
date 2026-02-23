@@ -48,13 +48,14 @@ export const handlePdfProxy: RequestHandler = async (req, res) => {
       urlsToTry.push(decodedUrl);
     }
 
-    // Try URLs in parallel and use the first successful one
-    const fetchWithQuickCheck = async (urlToTry: string): Promise<Response | null> => {
+    // Fetch the PDF into a single Buffer (no streaming) – safer for Vercel serverless
+    const fetchPdfAsBuffer = async (urlToTry: string): Promise<Buffer | null> => {
       try {
         const response = await fetch(urlToTry, {
           headers: {
-            "Accept": "application/pdf",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            Accept: "application/pdf",
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
           },
         });
 
@@ -62,119 +63,47 @@ export const handlePdfProxy: RequestHandler = async (req, res) => {
           return null;
         }
 
-        // Quick validation: peek at first 4 bytes (skip for speed if content-type is correct)
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.includes("application/pdf")) {
-          // Content-type is PDF, trust it and skip header check for speed
-          return response;
-        }
-
-        // Only validate header if content-type is uncertain
-        const reader = response.body?.getReader();
-        if (!reader) {
+        const arrayBuffer = await response.arrayBuffer();
+        if (arrayBuffer.byteLength === 0) {
           return null;
         }
 
-        const { value, done } = await reader.read();
-        if (done || !value || value.length < 4) {
-          reader.releaseLock();
-          return null;
-        }
-
-        // Check PDF header
-        const header = String.fromCharCode(...value.slice(0, 4));
+        // Basic header validation to ensure it's really a PDF
+        const headerBytes = new Uint8Array(arrayBuffer.slice(0, 4));
+        const header = String.fromCharCode(...headerBytes);
         if (header !== "%PDF") {
-          reader.releaseLock();
           return null;
         }
 
-        // Create a new stream that includes the first chunk
-        const stream = new ReadableStream({
-          start(controller) {
-            controller.enqueue(value);
-            const pump = async () => {
-              try {
-                while (true) {
-                  const { done, value: chunk } = await reader.read();
-                  if (done) {
-                    controller.close();
-                    break;
-                  }
-                  controller.enqueue(chunk);
-                }
-              } catch (err) {
-                controller.error(err);
-              }
-            };
-            pump();
-          },
-        });
-
-        return new Response(stream, {
-          status: response.status,
-          statusText: response.statusText,
-          headers: response.headers,
-        });
-      } catch (err) {
+        return Buffer.from(arrayBuffer);
+      } catch {
         return null;
       }
     };
 
-    // Try all URLs in parallel, use first successful
-    const results = await Promise.allSettled(
-      urlsToTry.map(url => fetchWithQuickCheck(url))
+    // Try all URLs in parallel and use the first successful Buffer
+    const results = await Promise.all(
+      urlsToTry.map((urlToTry) => fetchPdfAsBuffer(urlToTry))
     );
 
-    let validResponse: Response | null = null;
-    for (let i = 0; i < results.length; i++) {
-      const result = results[i];
-      if (result.status === "fulfilled" && result.value) {
-        validResponse = result.value;
-        break;
-      }
-    }
+    const pdfBuffer = results.find((buffer) => buffer !== null) as Buffer | null;
 
-    if (!validResponse) {
-      return res.status(404).json({ 
-        error: `Failed to fetch PDF from repository`,
+    if (!pdfBuffer) {
+      return res.status(404).json({
+        error: "Failed to fetch PDF from repository",
         url: decodedUrl,
-        triedUrls: urlsToTry
+        triedUrls: urlsToTry,
       });
     }
 
-    // Stream the PDF directly to client
+    // Send the PDF directly to the client using a Buffer
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", "inline; filename=document.pdf");
-    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.setHeader("Content-Disposition", "inline");
     res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("X-Frame-Options", "SAMEORIGIN");
+    res.setHeader("Cache-Control", "public, max-age=3600");
 
-    // Stream the response body
-    const reader = validResponse.body?.getReader();
-    if (!reader) {
-      return res.status(500).json({ error: "Response body is null" });
-    }
-
-    const pump = async () => {
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) {
-            res.end();
-            break;
-          }
-          res.write(Buffer.from(value));
-        }
-      } catch (err) {
-        console.error("Streaming error:", err);
-        if (!res.headersSent) {
-          res.status(500).json({ error: "Error streaming PDF" });
-        } else {
-          res.end();
-        }
-      }
-    };
-    
-    pump();
+    return res.send(pdfBuffer);
   } catch (error) {
     console.error("Error proxying PDF:", error);
     res.status(500).json({ 
