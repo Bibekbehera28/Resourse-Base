@@ -48,7 +48,7 @@ export const handlePdfProxy: RequestHandler = async (req, res) => {
       urlsToTry.push(decodedUrl);
     }
 
-    // Fetch the PDF into a single Buffer (no streaming) – safer for Vercel serverless
+    // Fetch the PDF into a single Buffer (no streaming) with global fetch
     const fetchPdfAsBuffer = async (urlToTry: string): Promise<Buffer | null> => {
       try {
         const response = await fetch(urlToTry, {
@@ -68,14 +68,15 @@ export const handlePdfProxy: RequestHandler = async (req, res) => {
           return null;
         }
 
+        const buffer = Buffer.from(arrayBuffer);
+
         // Basic header validation to ensure it's really a PDF
-        const headerBytes = new Uint8Array(arrayBuffer.slice(0, 4));
-        const header = String.fromCharCode(...headerBytes);
+        const header = buffer.subarray(0, 4).toString("latin1");
         if (header !== "%PDF") {
           return null;
         }
 
-        return Buffer.from(arrayBuffer);
+        return buffer;
       } catch {
         return null;
       }
